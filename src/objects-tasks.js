@@ -272,8 +272,10 @@ function fromJSON(proto, json) {
  *      { country: 'Russia',  city: 'Saint Petersburg' }
  *    ]
  */
-function sortCitiesArray(/* arr */) {
-  throw new Error('Not implemented');
+function sortCitiesArray(arr) {
+  return arr.sort(
+    (a, b) => a.country.localeCompare(b.country) || a.city.localeCompare(b.city)
+  );
 }
 
 /**
@@ -306,10 +308,20 @@ function sortCitiesArray(/* arr */) {
  *    "Poland" => ["Lodz"]
  *   }
  */
-function group(/* array, keySelector, valueSelector */) {
-  throw new Error('Not implemented');
-}
+function group(array, keySelector, valueSelector) {
+  const result = new Map();
 
+  array.forEach((item) => {
+    const key = keySelector(item);
+    const value = valueSelector(item);
+    if (result.has(key)) {
+      result.get(key).push(value);
+    } else {
+      result.set(key, [value]);
+    }
+  });
+  return result;
+}
 /**
  * Css selectors builder
  *
@@ -363,34 +375,92 @@ function group(/* array, keySelector, valueSelector */) {
  *
  *  For more examples see unit tests.
  */
+class CssSelectorBuilder {
+  constructor() {
+    this.selector = '';
+    this.isElementUsed = false;
+    this.isIdUsed = false;
+    this.isClassUsed = false;
+    this.isPseudoClassUsed = false;
+    this.isPseudoElementUsed = false;
+  }
+
+  element(value) {
+    if (this.isElementUsed) {
+      throw new Error('Element selector can be used only once');
+    }
+    this.selector = value;
+    this.isElementUsed = true;
+    return this;
+  }
+
+  id(value) {
+    if (this.isIdUsed) {
+      throw new Error('ID selector can be used only once');
+    }
+    this.selector += `#${value}`;
+    this.isIdUsed = true;
+    return this;
+  }
+
+  class(value) {
+    this.selector += `.${value}`;
+    return this;
+  }
+
+  attr(value) {
+    this.selector += `[${value}]`;
+    return this;
+  }
+
+  pseudoClass(value) {
+    if (this.isPseudoClassUsed) {
+      throw new Error('Pseudo-class selector can be used only once');
+    }
+    this.selector += `:${value}`;
+    this.isPseudoClassUsed = true;
+    return this;
+  }
+
+  pseudoElement(value) {
+    if (this.isPseudoElementUsed) {
+      throw new Error('Pseudo-element selector can be used only once');
+    }
+    this.selector += `::${value}`;
+    this.isPseudoElementUsed = true;
+    return this;
+  }
+
+  static combine(selector1, combinator, selector2) {
+    return `${selector1.stringify()} ${combinator} ${selector2.stringify()}`;
+  }
+
+  stringify() {
+    return this.selector;
+  }
+}
 
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  element(value) {
+    return new CssSelectorBuilder().element(value);
   },
-
-  id(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    return new CssSelectorBuilder().id(value);
   },
-
-  class(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    return new CssSelectorBuilder().class(value);
   },
-
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    return new CssSelectorBuilder().attr(value);
   },
-
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    return new CssSelectorBuilder().pseudoClass(value);
   },
-
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    return new CssSelectorBuilder().pseudoElement(value);
   },
-
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  combine(selector1, combinator, selector2) {
+    return CssSelectorBuilder.combine(selector1, combinator, selector2);
   },
 };
 
